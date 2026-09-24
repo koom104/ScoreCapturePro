@@ -1,11 +1,10 @@
 numpy
-opencv-python
 opencv-contrib-python
 pillow
 imagehash
 qrcode
-PySide6
-pyinstaller
+PySide6==6.9.2
+pyinstaller==6.22.3
 nuitka
 zstandard
 imageio
