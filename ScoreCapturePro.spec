@@ -1,16 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[
-            ('fonts', 'fonts'),
-            ('models', 'models'),
-            ('assets', 'assets'),
-            ('version.json', '.')
-        ],
+    datas=[('fonts', 'fonts'), ('models', 'models'), ('assets', 'assets'), ('version.json', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -24,21 +18,28 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name='ScoreCapturePro',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
+    upx=False,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='assets/icon.ico',
+    icon=['assets/icon.ico'],
+    contents_directory='.',
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name='ScoreCapturePro',
 )
