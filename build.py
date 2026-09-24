@@ -15,7 +15,7 @@ def run_command(command):
 
 def main():
     system_os = platform.system()
-    
+
     common_args = [
         sys.executable, "-m", "nuitka",
         "--standalone",
@@ -31,78 +31,52 @@ def main():
     print(f"Detected OS: {system_os}")
 
     if system_os == "Windows":
-        # === Windows 설정 (Onefile) ===
-        print("Starting build for Windows (Onefile)...")
-        
-        windows_args = [
-            "--onefile",
-            "--windows-console-mode=disable",
-            "--windows-icon-from-ico=assets/icon.ico",
-            "--output-filename=ScoreCapturePro.exe"
-        ]
-        
-        final_cmd = common_args[:-1] + windows_args + [common_args[-1]]
-        
-        run_command(final_cmd)
-        print("\nBuild Complete! Check 'ScoreCapturePro.exe'")
+        # Folder distribution avoids onefile extraction and UPX packing.
+        print("Starting build for Windows (folder distribution)...")
+        run_command([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "ScoreCapturePro.spec"])
+        print("\nBuild Complete! Check 'dist/ScoreCapturePro/ScoreCapturePro.exe'")
 
     elif system_os == "Darwin":
         # === macOS 설정 (App Bundle) ===
         print("Starting build for macOS (App Bundle)...")
-        
+
         app_name = "ScoreCapturePro.app"
         zip_name = "ScoreCapturePro_Mac.zip"
-        
+
         macos_args = [
             "--macos-create-app-bundle",
             "--macos-disable-console",
             "--macos-app-icon=assets/icon.png",
             "--output-filename=ScoreCapturePro"
         ]
-        
+
         final_cmd = common_args[:-1] + macos_args + [common_args[-1]]
-        
         run_command(final_cmd)
-        
+
         if os.path.exists("main.app") and not os.path.exists(app_name):
             print(f"Renaming main.app to {app_name}...")
             shutil.move("main.app", app_name)
-        elif os.path.exists(f"ScoreCapturePro.app"):
+        elif os.path.exists("ScoreCapturePro.app"):
             pass
-            
+
         if not os.path.exists(app_name):
             print(f"Error: {app_name} not found after build.")
             sys.exit(1)
 
         print("Updating Info.plist (Bundle ID & Permissions)...")
         plist_path = os.path.join(app_name, "Contents", "Info.plist")
-        
-        if os.path.exists(plist_path):
-            run_command([
-                "plutil", "-replace", "CFBundleIdentifier", 
-                "-string", "com.scorecapturepro.app", 
-                plist_path
-            ])
 
-            run_command([
-                "plutil", "-replace", "NSScreenCaptureUsageDescription", 
-                "-string", "악보 캡처를 위해 화면 녹화 권한이 필요합니다.", 
-                plist_path
-            ])
-            
+        if os.path.exists(plist_path):
+            run_command(["plutil", "-replace", "CFBundleIdentifier", "-string", "com.scorecapturepro.app", plist_path])
+            run_command(["plutil", "-replace", "NSScreenCaptureUsageDescription", "-string", "악보 캡처를 위해 화면 녹화 권한이 필요합니다.", plist_path])
             print("Re-signing the application to fix 'damaged' error...")
-            run_command([
-                "codesign", "--force", "--deep", "--sign", "-", app_name
-            ])
-            
+            run_command(["codesign", "--force", "--deep", "--sign", "-", app_name])
         else:
             print(f"Warning: {plist_path} not found. Settings skipped.")
 
-        # 압축 (Zip)
         print(f"Zipping {app_name} to {zip_name}...")
         if os.path.exists(zip_name):
             os.remove(zip_name)
-            
         subprocess.run(["zip", "-r", zip_name, app_name], check=True)
         print(f"\nBuild Complete! Check '{zip_name}'")
 
@@ -112,10 +86,8 @@ def main():
 
 if __name__ == "__main__":
     print("Installing build dependencies...")
-    build_deps = ["nuitka", "zstandard"]
+    build_deps = ["pyinstaller"] if sys.platform == "win32" else ["nuitka", "zstandard"]
     if sys.platform == "darwin":
         build_deps.append("pyobjc-framework-Quartz")
-        
-    subprocess.run([sys.executable, "-m", "pip", "install"] + build_deps, check=False)
-    
+    subprocess.run([sys.executable, "-m", "pip", "install"] + build_deps, check=True)
     main()
